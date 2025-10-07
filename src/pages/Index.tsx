@@ -45,6 +45,10 @@ const Index = () => {
       // If a file is selected, read its content
       if (selectedFile) {
         textToSummarize = await readFileContent(selectedFile);
+
+        // Make the parsed document available for chat so users can ask questions about it.
+        // We keep selectedFile state for reference but populate documentText so DocumentChat appears.
+        setDocumentText(textToSummarize);
       }
 
       // Call the edge function to summarize
