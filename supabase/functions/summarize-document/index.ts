@@ -59,6 +59,7 @@ serve(async (req) => {
 
     // Normalize language input: accept either a code (e.g., 'ta') or a full language name (e.g., 'Tamil')
     let targetLanguage = "English";
+    console.log(`summarize-document: received language param -> ${JSON.stringify(language)}`);
     if (language && typeof language === 'string') {
       if (languageNames[language]) {
         targetLanguage = languageNames[language];
@@ -70,9 +71,17 @@ serve(async (req) => {
       }
     }
 
+    console.log(`summarize-document: normalized targetLanguage -> ${targetLanguage}`);
+
+    // Stronger, explicit translation instruction to ensure the model replies in the requested language.
     const translationNote = targetLanguage !== "English"
-      ? `\n\nIMPORTANT: Provide the summary IN ${targetLanguage.toUpperCase()} (i.e., write the summary using the ${targetLanguage} language). Preserve legal terminology and meaning.`
+      ? `\n\nIMPORTANT: Reply ONLY in ${targetLanguage}. Translate the summary into ${targetLanguage} and do NOT include English or transliterations. Preserve legal terms and formatting; if a legal term has no clear equivalent, provide the best ${targetLanguage} translation and keep the meaning precise.`
       : "";
+
+    // If a non-English language was requested, make the system prompt aware too
+    if (targetLanguage !== "English") {
+      systemPrompt += `\n\nWhen producing the summary, you MUST respond exclusively in ${targetLanguage}. Do not output any English text.`;
+    }
 
     let userPrompt = "";
     

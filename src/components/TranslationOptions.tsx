@@ -28,14 +28,14 @@ export type Language =
   | "kn" // Kannada
   | "ml" // Malayalam
   | "pa" // Punjabi
-  | "or"; // Odia
+  | "or" // Odia
 
 interface TranslationOptionsProps {
   language: Language;
   onLanguageChange: (language: Language) => void;
 }
 
-const LANGUAGES = {
+const LANGUAGES: Record<Language, string> = {
   en: "English",
   es: "Spanish",
   fr: "French",

@@ -52,12 +52,15 @@ const Index = () => {
       }
 
       // Call the edge function to summarize
+      const payload = {
+        text: textToSummarize,
+        mode: summaryMode,
+        language: language,
+      };
+      console.log("Invoking summarize-document with payload:", payload);
+
       const { data, error } = await supabase.functions.invoke("summarize-document", {
-        body: {
-          text: textToSummarize,
-          mode: summaryMode,
-          language: language,
-        },
+        body: payload,
       });
 
       if (error) {
@@ -197,7 +200,7 @@ const Index = () => {
             {summary && documentText ? (
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <SummaryResult summary={summary} />
+                  <SummaryResult summary={summary} language={language} />
                 </div>
                 <div>
                   <DocumentChat documentText={documentText} />

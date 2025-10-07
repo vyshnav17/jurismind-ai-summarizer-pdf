@@ -1,15 +1,23 @@
-import { Copy, Download, CheckCircle } from "lucide-react";
+import { Copy, Download, CheckCircle, Play, Pause, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { Language } from "@/components/TranslationOptions";
 
 interface SummaryResultProps {
   summary: string;
+  // optional language code (e.g., 'en', 'ml') to choose voice/language for TTS
+  language?: Language;
 }
 
-export const SummaryResult = ({ summary }: SummaryResultProps) => {
+export const SummaryResult = ({ summary, language = "en" }: SummaryResultProps) => {
   const [copied, setCopied] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   const handleCopy = async () => {
     try {
@@ -35,11 +43,160 @@ export const SummaryResult = ({ summary }: SummaryResultProps) => {
     toast.success("Summary downloaded successfully!");
   };
 
+  // Text-to-Speech (Web Speech API)
+  useEffect(() => {
+    if (typeof window === "undefined" || !('speechSynthesis' in window)) return;
+
+    const loadVoices = () => {
+      const available = window.speechSynthesis.getVoices();
+      setVoices(available);
+      // Try to pick a voice matching the requested language if none selected
+      if (available.length && !selectedVoice) {
+        const match = available.find(v => v.lang.toLowerCase().startsWith(language));
+        if (match) setSelectedVoice(match.name);
+      }
+    };
+
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+
+    return () => {
+      window.speechSynthesis.onvoiceschanged = null;
+    };
+  }, [language, selectedVoice]);
+
+  const speak = () => {
+    if (typeof window === "undefined" || !('speechSynthesis' in window)) {
+      toast.error("Speech synthesis not supported in this browser");
+      return;
+    }
+
+    const synth = window.speechSynthesis;
+
+    // If paused, resume
+    if (synth.paused && isPaused) {
+      synth.resume();
+      setIsPlaying(true);
+      setIsPaused(false);
+      return;
+    }
+
+    // Cancel any existing utterance
+    synth.cancel();
+    const u = new SpeechSynthesisUtterance(summary);
+    // Prefer the selected voice
+    if (selectedVoice) {
+      const v = voices.find(v => v.name === selectedVoice);
+      if (v) u.voice = v;
+    } else {
+      // Set utterance language if possible
+      try {
+        u.lang = language;
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    u.onend = () => {
+      setIsPlaying(false);
+      setIsPaused(false);
+      utteranceRef.current = null;
+    };
+
+    u.onerror = (e) => {
+      console.error('TTS error', e);
+      toast.error('An error occurred during speech synthesis');
+      setIsPlaying(false);
+      setIsPaused(false);
+      utteranceRef.current = null;
+    };
+
+    // More reliable event handling: update play/pause state when utterance changes
+    u.onstart = () => {
+      console.log('TTS started');
+      setIsPlaying(true);
+      setIsPaused(false);
+    };
+
+    u.onpause = () => {
+      console.log('TTS paused');
+      setIsPlaying(false);
+      setIsPaused(true);
+    };
+
+    u.onresume = () => {
+      console.log('TTS resumed');
+      setIsPlaying(true);
+      setIsPaused(false);
+    };
+
+    utteranceRef.current = u;
+    synth.speak(u);
+    setIsPlaying(true);
+    setIsPaused(false);
+  };
+
+  const pause = () => {
+    if (typeof window === "undefined" || !('speechSynthesis' in window)) {
+      toast.error("Speech synthesis not supported in this browser");
+      return;
+    }
+
+    try {
+      const synth = window.speechSynthesis;
+      if (synth.speaking && !synth.paused) {
+        synth.pause();
+        setIsPlaying(false);
+        setIsPaused(true);
+        toast.success('Paused');
+      } else if (synth.paused) {
+        // If already paused, resume
+        synth.resume();
+        setIsPlaying(true);
+        setIsPaused(false);
+        toast.success('Resumed');
+      }
+    } catch (e) {
+      console.error('Error pausing/resuming TTS', e);
+      toast.error('Unable to pause/resume');
+    }
+  };
+
+  const stop = () => {
+    if (typeof window === "undefined" || !('speechSynthesis' in window)) {
+      toast.error("Speech synthesis not supported in this browser");
+      return;
+    }
+
+    try {
+      const synth = window.speechSynthesis;
+      synth.cancel();
+      setIsPlaying(false);
+      setIsPaused(false);
+      utteranceRef.current = null;
+      toast.success('Stopped');
+    } catch (e) {
+      console.error('Error stopping TTS', e);
+      toast.error('Unable to stop speech');
+    }
+  };
+
   return (
     <Card className="p-6 shadow-elegant">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold">Summary Result</h3>
         <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={speak}>
+              <Play className="w-4 h-4 mr-2" /> Read
+            </Button>
+            <Button variant="outline" size="sm" onClick={pause} disabled={!isPlaying && !isPaused}>
+              <Pause className="w-4 h-4 mr-2" /> Pause
+            </Button>
+            <Button variant="outline" size="sm" onClick={stop} disabled={!isPlaying && !isPaused}>
+              <Square className="w-4 h-4 mr-2" /> Stop
+            </Button>
+          </div>
           <Button
             variant="outline"
             size="sm"
