@@ -55,7 +55,7 @@ export const DocumentInput = ({ onFileSelect, onTextInput }: DocumentInputProps)
   };
 
   return (
-    <Card className="p-6 shadow-xl">
+    <Card className="p-6 shadow-elegant">
       <div className="flex gap-2 mb-6">
         <Button
           variant={inputMode === "file" ? "default" : "outline"}
@@ -75,16 +75,11 @@ export const DocumentInput = ({ onFileSelect, onTextInput }: DocumentInputProps)
         </Button>
       </div>
 
-      <div className="mb-4 flex items-center justify-between text-sm text-muted-foreground">
-        <div>Supported: PDF, DOCX, TXT</div>
-        <div className="italic">Tip: For scanned PDFs, use OCR for best results</div>
-      </div>
-
       {inputMode === "file" ? (
         <div
-          className={`border-2 rounded-xl p-10 text-center transition-all bg-gradient-to-br from-white/2 to-white/4 ${
+          className={`border-2 border-dashed rounded-xl p-12 text-center transition-all ${
             dragActive
-              ? "border-accent bg-accent/6 shadow-accent-glow scale-102"
+              ? "border-accent bg-accent/5 shadow-accent-glow"
               : "border-border hover:border-accent/50"
           }`}
           onDragEnter={handleDrag}
@@ -100,13 +95,16 @@ export const DocumentInput = ({ onFileSelect, onTextInput }: DocumentInputProps)
             onChange={handleFileInput}
           />
           <label htmlFor="file-upload" className="cursor-pointer block">
-            <Upload className="w-14 h-14 mx-auto mb-4 text-primary-foreground" />
-            <p className="text-lg font-semibold mb-2">Drop your document</p>
-            <p className="text-sm text-muted-foreground mb-3">or click to browse</p>
-            <div className="inline-flex items-center gap-2 bg-muted/30 px-3 py-1 rounded-full text-xs">
-              <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
-              Fast · Secure · Private
-            </div>
+            <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+            <p className="text-lg font-medium mb-2">
+              Drag & drop your document here
+            </p>
+            <p className="text-sm text-muted-foreground mb-4">
+              or click to browse
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Supports PDF, DOCX, and TXT files
+            </p>
           </label>
         </div>
       ) : (
