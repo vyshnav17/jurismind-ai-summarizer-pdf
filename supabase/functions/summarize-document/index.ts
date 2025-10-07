@@ -45,6 +45,16 @@ serve(async (req) => {
       ja: "Japanese",
       ar: "Arabic",
       hi: "Hindi",
+      // Indian languages
+      bn: "Bengali",
+      ta: "Tamil",
+      te: "Telugu",
+      mr: "Marathi",
+      gu: "Gujarati",
+      kn: "Kannada",
+      ml: "Malayalam",
+      pa: "Punjabi",
+      or: "Odia",
     };
 
     const targetLanguage = languageNames[language] || "English";
