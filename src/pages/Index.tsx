@@ -89,8 +89,34 @@ const Index = () => {
       formData.append("file", file);
       
       try {
-        // For now, we'll handle PDF/DOCX by reading as text
-        // In production, you'd use a proper parsing service
+        // Use pdfjs to extract text from PDFs on the client instead of reading raw bytes
+        if (file.type === "application/pdf" || file.name.endsWith(".pdf")) {
+          const arrayBuffer = await file.arrayBuffer();
+
+          // Dynamically import pdfjs (v2) to keep initial bundle small.
+          // For Vite, resolving the worker file can be tricky; use the unpkg CDN for the worker to avoid bundler path issues.
+          const pdfjs = await import('pdfjs-dist/build/pdf');
+
+          // Set worker to a CDN-hosted worker for the installed pdfjs-dist version.
+          // Update the version string if you change pdfjs-dist in package.json.
+          // Using the minified worker.
+          // @ts-ignore
+          pdfjs.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@2.16.105/build/pdf.worker.min.js';
+
+          const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+          let fullText = '';
+
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map((item: any) => item.str || '').join(' ');
+            fullText += `\n\n${pageText}`;
+          }
+
+          return fullText.trim();
+        }
+
+        // For DOCX we fall back to reading as text for now (could integrate mammoth.js later)
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = (e) => {
