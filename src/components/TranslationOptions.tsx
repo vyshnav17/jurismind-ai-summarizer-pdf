@@ -9,7 +9,26 @@ import {
 } from "@/components/ui/select";
 import { Languages } from "lucide-react";
 
-export type Language = "en" | "es" | "fr" | "de" | "it" | "pt" | "zh" | "ja" | "ar" | "hi";
+export type Language =
+  | "en"
+  | "es"
+  | "fr"
+  | "de"
+  | "it"
+  | "pt"
+  | "zh"
+  | "ja"
+  | "ar"
+  | "hi" // Hindi
+  | "bn" // Bengali
+  | "ta" // Tamil
+  | "te" // Telugu
+  | "mr" // Marathi
+  | "gu" // Gujarati
+  | "kn" // Kannada
+  | "ml" // Malayalam
+  | "pa" // Punjabi
+  | "or"; // Odia
 
 interface TranslationOptionsProps {
   language: Language;
@@ -27,6 +46,15 @@ const LANGUAGES = {
   ja: "Japanese",
   ar: "Arabic",
   hi: "Hindi",
+  bn: "Bengali",
+  ta: "Tamil",
+  te: "Telugu",
+  mr: "Marathi",
+  gu: "Gujarati",
+  kn: "Kannada",
+  ml: "Malayalam",
+  pa: "Punjabi",
+  or: "Odia",
 };
 
 export const TranslationOptions = ({
