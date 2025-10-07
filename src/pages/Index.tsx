@@ -191,11 +191,23 @@ const Index = () => {
           </Button>
         </div>
 
-        {summary && <SummaryResult summary={summary} />}
-        
-        {documentText && (
+        {/* Layout: show summary and chat side-by-side on larger screens, stacked on small screens */}
+        { (summary || documentText) && (
           <div className="mt-8">
-            <DocumentChat documentText={documentText} />
+            {summary && documentText ? (
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <SummaryResult summary={summary} />
+                </div>
+                <div>
+                  <DocumentChat documentText={documentText} />
+                </div>
+              </div>
+            ) : summary ? (
+              <SummaryResult summary={summary} />
+            ) : (
+              <DocumentChat documentText={documentText} />
+            )}
           </div>
         )}
       </div>
