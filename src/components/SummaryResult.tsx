@@ -6,10 +6,9 @@ import { useState } from "react";
 
 interface SummaryResultProps {
   summary: string;
-  language?: string;
 }
 
-export const SummaryResult = ({ summary, language }: SummaryResultProps) => {
+export const SummaryResult = ({ summary }: SummaryResultProps) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -34,15 +33,6 @@ export const SummaryResult = ({ summary, language }: SummaryResultProps) => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     toast.success("Summary downloaded successfully!");
-  };
-
-  const handleGoogleTranslate = () => {
-    // Google Translate URL parameters
-    // sl=auto (source language auto-detect), tl=<target language code>, text=<encoded summary>
-  const tl = language || 'en';
-    const encoded = encodeURIComponent(summary);
-    const url = `https://translate.google.com/?sl=auto&tl=${tl}&text=${encoded}&op=translate`;
-    window.open(url, '_blank');
   };
 
   return (
@@ -71,9 +61,6 @@ export const SummaryResult = ({ summary, language }: SummaryResultProps) => {
           <Button variant="outline" size="sm" onClick={handleDownload}>
             <Download className="w-4 h-4 mr-2" />
             Download
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleGoogleTranslate}>
-            Translate (Google)
           </Button>
         </div>
       </div>
