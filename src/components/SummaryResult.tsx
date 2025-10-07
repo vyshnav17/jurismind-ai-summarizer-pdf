@@ -1,0 +1,75 @@
+import { Copy, Download, CheckCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { toast } from "sonner";
+import { useState } from "react";
+
+interface SummaryResultProps {
+  summary: string;
+}
+
+export const SummaryResult = ({ summary }: SummaryResultProps) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(summary);
+      setCopied(true);
+      toast.success("Summary copied to clipboard!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      toast.error("Failed to copy to clipboard");
+    }
+  };
+
+  const handleDownload = () => {
+    const blob = new Blob([summary], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `juris-mind-summary-${Date.now()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("Summary downloaded successfully!");
+  };
+
+  return (
+    <Card className="p-6 shadow-elegant">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold">Summary Result</h3>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCopy}
+            className="transition-all"
+          >
+            {copied ? (
+              <>
+                <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
+                Copied
+              </>
+            ) : (
+              <>
+                <Copy className="w-4 h-4 mr-2" />
+                Copy
+              </>
+            )}
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleDownload}>
+            <Download className="w-4 h-4 mr-2" />
+            Download
+          </Button>
+        </div>
+      </div>
+      
+      <div className="prose prose-sm max-w-none bg-muted/30 rounded-lg p-6 border border-border">
+        <p className="whitespace-pre-wrap text-foreground leading-relaxed">
+          {summary}
+        </p>
+      </div>
+    </Card>
+  );
+};
