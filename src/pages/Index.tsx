@@ -6,7 +6,8 @@ import { SummaryResult } from "@/components/SummaryResult";
 import { TranslationOptions, Language } from "@/components/TranslationOptions";
 import { DocumentChat } from "@/components/DocumentChat";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, Bot } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -160,11 +161,17 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-subtle">
+    <div className="min-h-screen bg-judiciary-subtle relative">
+      <div className="pointer-events-none absolute inset-0 bg-court-overlay opacity-5" />
+      <img
+        src="/justice-emblem.svg"
+        alt="Justice emblem background"
+        className="pointer-events-none select-none absolute -top-10 -right-10 w-[380px] h-[380px] opacity-10"
+      />
       <Hero />
       
-      <div className="max-w-5xl mx-auto px-6 pb-20">
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
+      <div id="try" className="relative max-w-5xl mx-auto px-6 pb-20">
+        <div id="features" className="grid md:grid-cols-2 gap-6 mb-8">
           <DocumentInput
             onFileSelect={handleFileSelect}
             onTextInput={handleTextInput}
@@ -176,7 +183,7 @@ const Index = () => {
           </div>
         </div>
 
-        <div className="flex justify-center mb-8">
+        <div id="how-it-works" className="flex justify-center mb-8">
           <Button
             onClick={handleSummarize}
             disabled={isLoading || (!selectedFile && !documentText)}
@@ -194,25 +201,40 @@ const Index = () => {
           </Button>
         </div>
 
-        {/* Layout: show summary and chat side-by-side on larger screens, stacked on small screens */}
-        { (summary || documentText) && (
+        {/* Show summary when available; chat opens via floating button */}
+        { summary && (
           <div className="mt-8">
-            {summary && documentText ? (
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <SummaryResult summary={summary} language={language} />
-                </div>
-                <div>
-                  <DocumentChat documentText={documentText} />
-                </div>
-              </div>
-            ) : summary ? (
-              <SummaryResult summary={summary} />
-            ) : (
-              <DocumentChat documentText={documentText} />
-            )}
+            <SummaryResult summary={summary} language={language} />
           </div>
         )}
+
+        {/* Floating AI chat button that opens a sheet with DocumentChat */}
+        { documentText && (
+          <Sheet>
+            <SheetTrigger asChild>
+              <button
+                aria-label="Chat with document"
+                className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity flex items-center justify-center"
+              >
+                <Bot className="h-6 w-6" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="right" className="sm:max-w-md">
+              <SheetHeader>
+                <SheetTitle>Chat with document</SheetTitle>
+              </SheetHeader>
+              <div className="mt-4">
+                <DocumentChat documentText={documentText} />
+              </div>
+            </SheetContent>
+          </Sheet>
+        )}
+
+        
+        <section id="contact" className="mt-20">
+          <h3 className="text-2xl font-semibold mb-3">Contact</h3>
+          <p className="text-muted-foreground">Have questions or feedback? Reach us at contact@jurismind.app</p>
+        </section>
       </div>
     </div>
   );

@@ -93,7 +93,11 @@ serve(async (req) => {
         userPrompt = `Provide a DETAILED, comprehensive summary of the following legal document. Include all important points, arguments, decisions, and relevant context. Preserve legal accuracy while organizing the information clearly.${translationNote}\n\nDocument:\n${text}`;
         break;
       case "plain":
-        userPrompt = `Provide a summary of the following legal document in PLAIN ENGLISH. Simplify complex legal terminology and jargon for easy understanding by non-lawyers. Make it accessible while preserving the essential meaning and key points.${translationNote}\n\nDocument:\n${text}`;
+        if (targetLanguage === "English") {
+          userPrompt = `Provide a summary of the following legal document in PLAIN ENGLISH. Simplify complex legal terminology and jargon for easy understanding by non-lawyers. Make it accessible while preserving the essential meaning and key points.${translationNote}\n\nDocument:\n${text}`;
+        } else {
+          userPrompt = `Provide a summary of the following legal document in plain, simple ${targetLanguage}. Avoid English or transliterations. Simplify complex legal terminology for easy understanding by non-lawyers while preserving the essential meaning and key points.${translationNote}\n\nDocument:\n${text}`;
+        }
         break;
       default:
         userPrompt = `Summarize the following legal document accurately and concisely.${translationNote}\n\n${text}`;
@@ -151,10 +155,157 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const summary = data.choices?.[0]?.message?.content;
+    let summary = data.choices?.[0]?.message?.content;
 
     if (!summary) {
       throw new Error("No summary generated");
+    }
+
+    // If Google Cloud Translation API key is configured, prefer it for reliable script-correct translations
+    if (targetLanguage !== "English") {
+      const GOOGLE_TRANSLATE_API_KEY =
+        Deno.env.get("AIzaSyC5Vz29DXoh6czG6sZ6bINegTQm4raEDUw") ||
+        Deno.env.get("AIzaSyC5Vz29DXoh6czG6sZ6bINegTQm4raEDUw") ||
+        Deno.env.get("AIzaSyC5Vz29DXoh6czG6sZ6bINegTQm4raEDUw");
+      const targetCodeG = Object.entries(languageNames).find(([k, v]) => v === targetLanguage)?.[0] || "hi";
+      if (GOOGLE_TRANSLATE_API_KEY) {
+        try {
+          const chunkForG = (input: string, maxLen = 3500) => {
+            const parts: string[] = [];
+            let start = 0;
+            while (start < input.length) {
+              let end = Math.min(start + maxLen, input.length);
+              const slice = input.slice(start, end);
+              const lastBreak = Math.max(slice.lastIndexOf("\n\n"), slice.lastIndexOf(". "), slice.lastIndexOf("\n"));
+              if (end < input.length && lastBreak > 200) end = start + lastBreak + 1;
+              parts.push(input.slice(start, end));
+              start = end;
+            }
+            return parts;
+          };
+
+          const chunks = chunkForG(summary);
+          const htmlDecode = (s: string) => s
+            .replace(/&amp;/g, "&")
+            .replace(/&lt;/g, "<")
+            .replace(/&gt;/g, ">")
+            .replace(/&#39;/g, "'")
+            .replace(/&quot;/g, '"');
+          const translatedChunks: string[] = [];
+          for (const chunk of chunks) {
+            const resp = await fetch(`https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_TRANSLATE_API_KEY}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ q: chunk, target: targetCodeG, format: "text", model: "nmt" }),
+            });
+            if (!resp.ok) throw new Error(`Google Translate HTTP ${resp.status}`);
+            const j = await resp.json();
+            const t = j?.data?.translations?.[0]?.translatedText;
+            translatedChunks.push(typeof t === 'string' && t.length ? htmlDecode(t) : chunk);
+          }
+          summary = translatedChunks.join("\n\n");
+          console.log(`Google Translate applied for ${targetCodeG}`);
+        } catch (e) {
+          console.warn("Google Translate failed, falling back to AI/public pipeline", e);
+        }
+      }
+    }
+
+    // Robust final translation enforcement for non-English: chunked AI translation, then optional public fallback
+    if (targetLanguage !== "English") {
+      const targetCode = Object.entries(languageNames).find(([k, v]) => v === targetLanguage)?.[0] || "hi";
+
+      const chunkText = (input: string, maxLen = 1500) => {
+        const parts: string[] = [];
+        let start = 0;
+        while (start < input.length) {
+          let end = Math.min(start + maxLen, input.length);
+          // try to cut on sentence boundary
+          const slice = input.slice(start, end);
+          const lastBreak = Math.max(slice.lastIndexOf("\n\n"), slice.lastIndexOf(". "), slice.lastIndexOf("\n"));
+          if (end < input.length && lastBreak > 200) {
+            end = start + lastBreak + 1;
+          }
+          parts.push(input.slice(start, end));
+          start = end;
+        }
+        return parts;
+      };
+
+      const chunks = chunkText(summary);
+      const translatedChunks: string[] = [];
+      for (const chunk of chunks) {
+        let chunkTranslated = "";
+        try {
+          const enforceResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "google/gemini-2.5-flash",
+              messages: [
+                { role: "system", content: `You are a precise legal translator. Output ONLY in ${targetLanguage}. Never include English words or transliterations. Preserve legal nuance.` },
+                { role: "user", content: `Translate into ${targetLanguage}. Output only the translated text.\n\n${chunk}` },
+              ],
+            }),
+          });
+          if (enforceResponse.ok) {
+            const enforceData = await enforceResponse.json();
+            const enforced = enforceData.choices?.[0]?.message?.content;
+            if (enforced) chunkTranslated = enforced;
+          }
+        } catch {}
+
+        // If AI translator failed or returned empty, try public fallback for this chunk
+        if (!chunkTranslated || !chunkTranslated.trim()) {
+          try {
+            const myMemoryUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=${encodeURIComponent("auto|" + targetCode)}`;
+            const mmResp = await fetch(myMemoryUrl);
+            if (mmResp.ok) {
+              const mmJson = await mmResp.json();
+              const mmText = mmJson?.responseData?.translatedText;
+              if (typeof mmText === 'string' && mmText.trim().length > 0) {
+                chunkTranslated = mmText;
+              }
+            }
+          } catch {}
+        }
+
+        translatedChunks.push(chunkTranslated || chunk);
+      }
+
+      summary = translatedChunks.join("\n\n");
+    }
+
+    // Final enforcement: always translate to targetLanguage when not English
+    if (targetLanguage !== "English") {
+      try {
+        const enforceResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [
+              { role: "system", content: `You are a precise translator. Output ONLY in ${targetLanguage}. Never include English words or transliterations. Keep legal meaning exact.` },
+              { role: "user", content: `Translate into ${targetLanguage}. Output only the translated text.\n\n${summary}` },
+            ],
+          }),
+        });
+        if (enforceResponse.ok) {
+          const enforceData = await enforceResponse.json();
+          const enforced = enforceData.choices?.[0]?.message?.content;
+          if (enforced) summary = enforced;
+        } else {
+          console.warn("Final enforce translation failed", enforceResponse.status);
+        }
+      } catch (e) {
+        console.warn("Final enforce translation error", e);
+      }
     }
 
     console.log("Summary generated successfully");

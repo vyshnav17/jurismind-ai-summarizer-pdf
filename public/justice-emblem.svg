@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" fill="none">
+  <!-- Stylized scales of justice emblem -->
+  <g stroke="#b68b00" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.9">
+    <!-- Pillar -->
+    <path d="M128 28 L128 200" />
+    <path d="M96 200 L160 200" />
+    <path d="M84 218 L172 218" />
+    <!-- Beam -->
+    <path d="M64 72 L192 72" />
+    <!-- Left chain -->
+    <path d="M96 72 C96 90, 88 104, 80 112" />
+    <path d="M80 112 C72 120, 64 132, 64 140" />
+    <!-- Right chain -->
+    <path d="M160 72 C160 90, 168 104, 176 112" />
+    <path d="M176 112 C184 120, 192 132, 192 140" />
+    <!-- Left pan -->
+    <path d="M40 140 C56 156, 88 156, 104 140" />
+    <!-- Right pan -->
+    <path d="M152 140 C168 156, 200 156, 216 140" />
+  </g>
+  <!-- Subtle fill under pans -->
+  <g fill="#b68b00" opacity="0.08">
+    <path d="M40 140 C56 156, 88 156, 104 140 L40 140 Z" />
+    <path d="M152 140 C168 156, 200 156, 216 140 L152 140 Z" />
+  </g>
+</svg>
+
+

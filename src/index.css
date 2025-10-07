@@ -52,6 +52,17 @@ All colors MUST be HSL.
     --gradient-accent: linear-gradient(135deg, hsl(42 90% 55%), hsl(42 95% 65%));
     --gradient-subtle: linear-gradient(180deg, hsl(220 25% 98%), hsl(220 20% 96%));
 
+    /* Judiciary theme extensions */
+    --judiciary-hero: linear-gradient(135deg, hsl(220 60% 16%), hsl(220 60% 24%));
+    --judiciary-subtle: linear-gradient(180deg, hsl(220 20% 97%), hsl(220 18% 95%));
+    --court-overlay: repeating-linear-gradient(
+      45deg,
+      hsl(42 90% 55% / 0.12) 0px,
+      hsl(42 90% 55% / 0.12) 2px,
+      transparent 2px,
+      transparent 6px
+    );
+
     /* Shadows */
     --shadow-elegant: 0 10px 40px -10px hsl(220 60% 18% / 0.2);
     --shadow-glow: 0 0 40px hsl(220 60% 35% / 0.15);

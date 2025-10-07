@@ -58,6 +58,8 @@ export default {
         "gradient-hero": "var(--gradient-hero)",
         "gradient-accent": "var(--gradient-accent)",
         "gradient-subtle": "var(--gradient-subtle)",
+        "judiciary-hero": "var(--judiciary-hero)",
+        "judiciary-subtle": "var(--judiciary-subtle)",
       },
       boxShadow: {
         elegant: "var(--shadow-elegant)",

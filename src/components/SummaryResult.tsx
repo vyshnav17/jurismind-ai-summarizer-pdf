@@ -43,6 +43,69 @@ export const SummaryResult = ({ summary, language = "en" }: SummaryResultProps) 
     toast.success("Summary downloaded successfully!");
   };
 
+  const handleDownloadPdf = async () => {
+    try {
+      const { PDFDocument, StandardFonts, rgb } = await import('pdf-lib');
+      const pdfDoc = await PDFDocument.create();
+      let page = pdfDoc.addPage();
+      let { width, height } = page.getSize();
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+      const fontSize = 12;
+      const margin = 50;
+      const maxWidth = width - margin * 2;
+
+      const words = summary.split(/\s+/);
+      let line = '';
+      const lines: string[] = [];
+      for (const word of words) {
+        const testLine = line ? line + ' ' + word : word;
+        const testWidth = font.widthOfTextAtSize(testLine, fontSize);
+        if (testWidth > maxWidth) {
+          lines.push(line);
+          line = word;
+        } else {
+          line = testLine;
+        }
+      }
+      if (line) lines.push(line);
+
+      let y = height - margin;
+      const lineHeight = fontSize * 1.3;
+      page.drawText('JurisMind Summary', { x: margin, y: y - fontSize, size: 16, font, color: rgb(0,0,0) });
+      y -= 30;
+
+      for (const l of lines) {
+        if (y < margin + lineHeight) {
+          page = pdfDoc.addPage();
+          ({ width, height } = page.getSize());
+          y = height - margin;
+          page.drawText('JurisMind Summary (cont.)', { x: margin, y: y - fontSize, size: 14, font, color: rgb(0,0,0) });
+          y -= 30;
+          page.drawText(l, { x: margin, y, size: fontSize, font, color: rgb(0,0,0) });
+        } else {
+          page.drawText(l, { x: margin, y, size: fontSize, font, color: rgb(0,0,0) });
+        }
+        y -= lineHeight;
+      }
+
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `juris-mind-summary-${Date.now()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success('PDF downloaded');
+    } catch (e) {
+      console.error('PDF generation error', e);
+      toast.error('Failed to generate PDF. Please try again.');
+    }
+  };
+
   // Text-to-Speech (Web Speech API)
   useEffect(() => {
     if (typeof window === "undefined" || !('speechSynthesis' in window)) return;
@@ -185,7 +248,7 @@ export const SummaryResult = ({ summary, language = "en" }: SummaryResultProps) 
     <Card className="p-6 shadow-elegant">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold">Summary Result</h3>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 justify-end">
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={speak}>
               <Play className="w-4 h-4 mr-2" /> Read
@@ -219,6 +282,14 @@ export const SummaryResult = ({ summary, language = "en" }: SummaryResultProps) 
             <Download className="w-4 h-4 mr-2" />
             Download
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDownloadPdf}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Download PDF
+          </Button>
         </div>
       </div>
       
@@ -226,6 +297,14 @@ export const SummaryResult = ({ summary, language = "en" }: SummaryResultProps) 
         <p className="whitespace-pre-wrap text-foreground leading-relaxed">
           {summary}
         </p>
+      </div>
+
+      {/* Mobile-friendly action bar */}
+      <div className="mt-4 flex justify-end md:hidden">
+        <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
+          <Download className="w-4 h-4 mr-2" />
+          Download PDF
+        </Button>
       </div>
     </Card>
   );
