@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useState } from "react";
+import { useCallback } from "react";
 
 interface SummaryResultProps {
   summary: string;
@@ -11,6 +12,40 @@ interface SummaryResultProps {
 
 export const SummaryResult = ({ summary, language }: SummaryResultProps) => {
   const [copied, setCopied] = useState(false);
+  const [translating, setTranslating] = useState(false);
+  const [translated, setTranslated] = useState<string | null>(null);
+
+  const handleInAppTranslate = useCallback(async () => {
+    if (!language) {
+      toast.error('Please select a target language first');
+      return;
+    }
+
+    setTranslating(true);
+    setTranslated(null);
+
+    try {
+      const res = await fetch('/supabase/functions/v1/translate-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: summary, targetLanguage: language }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.error || 'Translation failed');
+      }
+
+      setTranslated(data.translated);
+      toast.success('Translated successfully');
+    } catch (err: any) {
+      console.error('Translate error:', err);
+      toast.error(err.message || 'Translation failed');
+    } finally {
+      setTranslating(false);
+    }
+  }, [language, summary]);
 
   const handleCopy = async () => {
     try {
@@ -75,13 +110,19 @@ export const SummaryResult = ({ summary, language }: SummaryResultProps) => {
           <Button variant="outline" size="sm" onClick={handleGoogleTranslate}>
             Translate (Google)
           </Button>
+          <Button variant="default" size="sm" onClick={handleInAppTranslate} disabled={translating}>
+            {translating ? 'Translating...' : 'Translate In-App'}
+          </Button>
         </div>
       </div>
       
       <div className="prose prose-sm max-w-none bg-muted/30 rounded-lg p-6 border border-border">
         <p className="whitespace-pre-wrap text-foreground leading-relaxed">
-          {summary}
+          {translated ?? summary}
         </p>
+        {translated && (
+          <p className="text-xs text-muted-foreground mt-4">(Showing translated text — original available for copy/download)</p>
+        )}
       </div>
     </Card>
   );
