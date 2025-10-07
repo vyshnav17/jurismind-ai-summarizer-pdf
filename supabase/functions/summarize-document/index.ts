@@ -57,9 +57,21 @@ serve(async (req) => {
       or: "Odia",
     };
 
-    const targetLanguage = languageNames[language] || "English";
-    const translationNote = language !== "en" 
-      ? `\n\nIMPORTANT: Provide the summary in ${targetLanguage}.` 
+    // Normalize language input: accept either a code (e.g., 'ta') or a full language name (e.g., 'Tamil')
+    let targetLanguage = "English";
+    if (language && typeof language === 'string') {
+      if (languageNames[language]) {
+        targetLanguage = languageNames[language];
+      } else {
+        // If a full language name was sent (case-insensitive), try to match it
+        const lc = language.toLowerCase();
+        const matched = Object.values(languageNames).find((n) => n.toLowerCase() === lc);
+        if (matched) targetLanguage = matched;
+      }
+    }
+
+    const translationNote = targetLanguage !== "English"
+      ? `\n\nIMPORTANT: Provide the summary IN ${targetLanguage.toUpperCase()} (i.e., write the summary using the ${targetLanguage} language). Preserve legal terminology and meaning.`
       : "";
 
     let userPrompt = "";
