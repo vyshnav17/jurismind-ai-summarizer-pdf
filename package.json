@@ -61,7 +61,8 @@
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.9",
     "zod": "^3.25.76",
-    "pdfjs-dist": "^2.16.105"
+    "pdfjs-dist": "^2.16.105",
+    "gsap": "^3.12.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",

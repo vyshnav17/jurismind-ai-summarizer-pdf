@@ -1,4 +1,5 @@
 import { Scale } from "lucide-react";
+import { AnimatedStickers } from "./AnimatedStickers";
 
 export const Hero = () => {
   return (
@@ -8,6 +9,8 @@ export const Hero = () => {
         <div className="absolute top-10 right-10 w-64 h-64 bg-accent rounded-full blur-3xl" />
         <div className="absolute bottom-10 left-10 w-96 h-96 bg-primary-glow rounded-full blur-3xl" />
       </div>
+
+      <AnimatedStickers />
 
       <div className="relative max-w-4xl mx-auto text-center">
         <div className="flex justify-center mb-6">
