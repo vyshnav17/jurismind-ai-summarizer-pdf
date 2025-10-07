@@ -197,14 +197,14 @@ const Index = () => {
             {summary && documentText ? (
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <SummaryResult summary={summary} />
+                  <SummaryResult summary={summary} language={language} />
                 </div>
                 <div>
                   <DocumentChat documentText={documentText} />
                 </div>
               </div>
             ) : summary ? (
-              <SummaryResult summary={summary} />
+              <SummaryResult summary={summary} language={language} />
             ) : (
               <DocumentChat documentText={documentText} />
             )}
