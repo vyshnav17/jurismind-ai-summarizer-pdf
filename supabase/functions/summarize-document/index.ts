@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { text, mode } = await req.json();
+    const { text, mode, language = "en" } = await req.json();
 
     if (!text) {
       return new Response(
@@ -34,20 +34,38 @@ serve(async (req) => {
     // Prepare the system prompt based on the summary mode
     let systemPrompt = `You are an expert legal document summarizer. Your task is to analyze legal and judicial documents and provide accurate, well-structured summaries.`;
 
+    const languageNames: Record<string, string> = {
+      en: "English",
+      es: "Spanish",
+      fr: "French",
+      de: "German",
+      it: "Italian",
+      pt: "Portuguese",
+      zh: "Chinese",
+      ja: "Japanese",
+      ar: "Arabic",
+      hi: "Hindi",
+    };
+
+    const targetLanguage = languageNames[language] || "English";
+    const translationNote = language !== "en" 
+      ? `\n\nIMPORTANT: Provide the summary in ${targetLanguage}.` 
+      : "";
+
     let userPrompt = "";
     
     switch (mode) {
       case "short":
-        userPrompt = `Provide a SHORT, concise summary of the following legal document. Focus only on the most critical points, key decisions, and essential information. Keep it brief (2-3 paragraphs maximum).\n\nDocument:\n${text}`;
+        userPrompt = `Provide a SHORT, concise summary of the following legal document. Focus only on the most critical points, key decisions, and essential information. Keep it brief (2-3 paragraphs maximum).${translationNote}\n\nDocument:\n${text}`;
         break;
       case "detailed":
-        userPrompt = `Provide a DETAILED, comprehensive summary of the following legal document. Include all important points, arguments, decisions, and relevant context. Preserve legal accuracy while organizing the information clearly.\n\nDocument:\n${text}`;
+        userPrompt = `Provide a DETAILED, comprehensive summary of the following legal document. Include all important points, arguments, decisions, and relevant context. Preserve legal accuracy while organizing the information clearly.${translationNote}\n\nDocument:\n${text}`;
         break;
       case "plain":
-        userPrompt = `Provide a summary of the following legal document in PLAIN ENGLISH. Simplify complex legal terminology and jargon for easy understanding by non-lawyers. Make it accessible while preserving the essential meaning and key points.\n\nDocument:\n${text}`;
+        userPrompt = `Provide a summary of the following legal document in PLAIN ENGLISH. Simplify complex legal terminology and jargon for easy understanding by non-lawyers. Make it accessible while preserving the essential meaning and key points.${translationNote}\n\nDocument:\n${text}`;
         break;
       default:
-        userPrompt = `Summarize the following legal document accurately and concisely:\n\n${text}`;
+        userPrompt = `Summarize the following legal document accurately and concisely.${translationNote}\n\n${text}`;
     }
 
     console.log(`Summarizing document with mode: ${mode}`);

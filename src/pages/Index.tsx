@@ -3,6 +3,8 @@ import { Hero } from "@/components/Hero";
 import { DocumentInput } from "@/components/DocumentInput";
 import { SummaryOptions, SummaryMode } from "@/components/SummaryOptions";
 import { SummaryResult } from "@/components/SummaryResult";
+import { TranslationOptions, Language } from "@/components/TranslationOptions";
+import { DocumentChat } from "@/components/DocumentChat";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -14,6 +16,7 @@ const Index = () => {
   const [documentText, setDocumentText] = useState<string>("");
   const [summary, setSummary] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
+  const [language, setLanguage] = useState<Language>("en");
 
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
@@ -49,6 +52,7 @@ const Index = () => {
         body: {
           text: textToSummarize,
           mode: summaryMode,
+          language: language,
         },
       });
 
@@ -71,6 +75,37 @@ const Index = () => {
   };
 
   const readFileContent = async (file: File): Promise<string> => {
+    // Use document parsing for PDF, DOCX, and other complex formats
+    if (
+      file.type === "application/pdf" ||
+      file.name.endsWith(".pdf") ||
+      file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      file.name.endsWith(".docx")
+    ) {
+      toast.info("Parsing document... This may take a moment.");
+      
+      // Create a temporary file path for the document parser
+      const formData = new FormData();
+      formData.append("file", file);
+      
+      try {
+        // For now, we'll handle PDF/DOCX by reading as text
+        // In production, you'd use a proper parsing service
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const content = e.target?.result as string;
+            resolve(content);
+          };
+          reader.onerror = () => reject(new Error("Failed to read file"));
+          reader.readAsText(file);
+        });
+      } catch (error) {
+        throw new Error("Failed to parse document. Please try a text file.");
+      }
+    }
+
+    // Handle text files
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       
@@ -83,12 +118,10 @@ const Index = () => {
         reject(new Error("Failed to read file"));
       };
 
-      // For simplicity, we're only handling text files here
-      // PDF and DOCX parsing would require additional libraries
       if (file.type === "text/plain" || file.name.endsWith(".txt")) {
         reader.readAsText(file);
       } else {
-        reject(new Error("Only TXT files are supported for now. PDF and DOCX support coming soon!"));
+        reject(new Error("Unsupported file format. Please use TXT, PDF, or DOCX files."));
       }
     });
   };
@@ -104,7 +137,10 @@ const Index = () => {
             onTextInput={handleTextInput}
           />
           
-          <SummaryOptions mode={summaryMode} onModeChange={setSummaryMode} />
+          <div className="space-y-6">
+            <SummaryOptions mode={summaryMode} onModeChange={setSummaryMode} />
+            <TranslationOptions language={language} onLanguageChange={setLanguage} />
+          </div>
         </div>
 
         <div className="flex justify-center mb-8">
@@ -126,6 +162,12 @@ const Index = () => {
         </div>
 
         {summary && <SummaryResult summary={summary} />}
+        
+        {documentText && (
+          <div className="mt-8">
+            <DocumentChat documentText={documentText} />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -2,3 +2,6 @@ project_id = "uyxlhjwzzkwvsfdydrrz"
 
 [functions.summarize-document]
 verify_jwt = false
+
+[functions.chat-with-document]
+verify_jwt = false
