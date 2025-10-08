@@ -92,6 +92,12 @@ npm i
 
 # Start the development server
 npm run dev
+
+# Create the  .env file and add the API Keys here 
+VITE_SUPABASE_PROJECT_ID="YOUR SUPABASE PROJECT ID"
+VITE_SUPABASE_PUBLISHABLE_KEY="YOUR SUPABASE PUBLISHABLE KEY"
+VITE_SUPABASE_URL="YOUR SUPABASE URL"
+
 ```
 
 ### Editing
